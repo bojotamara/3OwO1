@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.cmput3owo1.moodlet.adapters.RequestListAdapter;
 import com.cmput3owo1.moodlet.models.FollowRequest;
 import com.cmput3owo1.moodlet.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -193,55 +194,55 @@ public class UserService implements IUserServiceProvider{
     public void sendFollowRequest(final User user, final OnFollowRequestListener listener) {
         String currentUser = auth.getCurrentUser().getDisplayName();
         FollowRequest followRequest = new FollowRequest(currentUser, user.getUsername());
-        db.collection("requests")
-                .document()
-                .set(followRequest)
+        DocumentReference doc = db.collection("requests")
+                .document();
+
+        doc.set(followRequest);
+        doc.update("id", doc.getId())
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         listener.onRequestSuccess(user);
                     }
-                });
-                //TODO .addOnFailureListener() - Add this later
+        }); //TODO .addOnFailureListener() - Add this later
     }
 
     @Override
-    public void acceptFollowRequest(FollowRequest request) {
+    public void acceptFollowRequest(FollowRequest request, final OnAcceptRequestListener listener) {
         final String newFollowerUsername = request.getRequestFrom();
         final String currentUser = request.getRequestTo();
-        HashMap<String, String> data = new HashMap<>();
-        data.put("username", newFollowerUsername);
 
-        db.collection("users").document(currentUser).collection("followers")
-                .add(data);
+        HashMap<String, String> followerData = new HashMap<>();
+        followerData.put("username", newFollowerUsername);
 
-        Query moodHistoryQuery = db.collection("moodEvents")
-                .whereEqualTo("username", currentUser)
-                .orderBy("date", Query.Direction.DESCENDING)
-                .limit(1);
+        HashMap<String, String> followingData = new HashMap<>();
+        followingData.put("username", currentUser);
 
-        moodHistoryQuery.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-            @Override
-            public void onSuccess(QuerySnapshot snapshots) {
-                String path = "users/" + newFollowerUsername + "/following/" + currentUser;
-                if (snapshots.isEmpty()) {
-                    db.document(path).set(new HashMap<String, Object>());
-                } else {
-                    for (QueryDocumentSnapshot doc : snapshots) {
-                        MoodEvent mostRecentEvent = doc.toObject(MoodEvent.class);
-                        db.document(path).set(mostRecentEvent);
-                        db.document(path).update("username", currentUser);
+        db.collection("users")
+                .document(currentUser)
+                .collection("followers")
+                .document(newFollowerUsername)
+                .set(followerData);
+
+        db.collection("users")
+                .document(newFollowerUsername)
+                .collection("following")
+                .document(currentUser)
+                .set(followingData).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        listener.onAcceptRequestSuccess(newFollowerUsername);
                     }
-                }
-            }
-        });
+                });
 
-        declineFollowRequest(request);
+        deleteFollowRequest(request);
     }
 
     @Override
-    public void declineFollowRequest(FollowRequest request) {
-        db.collection("requests").document(request.getId()).delete();
+    public void deleteFollowRequest(FollowRequest request) {
+        db.collection("requests")
+                .document(request.getId())
+                .delete();
     }
 
     private Task<DocumentSnapshot> setFollowStatusForUser(final User user) {

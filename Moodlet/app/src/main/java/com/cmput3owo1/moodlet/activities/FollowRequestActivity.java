@@ -12,7 +12,9 @@ import com.cmput3owo1.moodlet.R;
 import com.cmput3owo1.moodlet.adapters.RequestListAdapter;
 import com.cmput3owo1.moodlet.models.FollowRequest;
 import com.cmput3owo1.moodlet.models.User;
+import com.cmput3owo1.moodlet.services.IMoodEventServiceProvider;
 import com.cmput3owo1.moodlet.services.IUserServiceProvider;
+import com.cmput3owo1.moodlet.services.MoodEventService;
 import com.cmput3owo1.moodlet.services.UserService;
 import com.google.firebase.firestore.Query;
 
@@ -20,13 +22,14 @@ import java.util.ArrayList;
 
 public class FollowRequestActivity extends AppCompatActivity implements
         IUserServiceProvider.OnAcceptRequestsListener, RequestListAdapter.OnAcceptClickListener,
-        RequestListAdapter.OnDeclineClickListener {
+        RequestListAdapter.OnDeclineClickListener, IUserServiceProvider.OnAcceptRequestListener {
 
     Toolbar toolbar;
     private ListView requestsListView;
     private RequestListAdapter requestsAdapter;
     private ArrayList<FollowRequest> requestDataList;
-    private IUserServiceProvider service;
+    private IUserServiceProvider userService;
+    private IMoodEventServiceProvider moodEventService;
 
 
     @Override
@@ -58,10 +61,10 @@ public class FollowRequestActivity extends AppCompatActivity implements
 
         requestsListView.setAdapter(requestsAdapter);
 
-        service = new UserService();
-        service.getFollowRequests(this);
-        
+        userService = new UserService();
+        userService.getFollowRequests(this);
 
+        moodEventService = new MoodEventService();
     }
 
     @Override
@@ -73,12 +76,16 @@ public class FollowRequestActivity extends AppCompatActivity implements
 
     @Override
     public void OnAcceptClick(FollowRequest requestFrom) {
-        service.acceptFollowRequest(requestFrom);
-
+        userService.acceptFollowRequest(requestFrom, this);
     }
 
     @Override
     public void OnDeclineClick(FollowRequest request) {
-        service.declineFollowRequest(request);
+        userService.deleteFollowRequest(request);
+    }
+
+    @Override
+    public void onAcceptRequestSuccess(String newFollowerUsername) {
+        moodEventService.updateFollowerWithMostRecentMood(newFollowerUsername);
     }
 }

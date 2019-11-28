@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navView, navController);
 
     }
-    
+
     private void openFollowRequestActivity(){
         Intent intent = new Intent(this, FollowRequestActivity.class);
         startActivity(intent);
