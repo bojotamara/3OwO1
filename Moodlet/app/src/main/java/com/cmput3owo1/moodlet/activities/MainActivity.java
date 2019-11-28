@@ -27,8 +27,8 @@ import androidx.navigation.ui.NavigationUI;
 public class MainActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
-
     private IUserServiceProvider userService;
+
     /**
      * Called when the activity is starting. Sets up the navigation.
      * @param savedInstanceState Used to restore an activity's previous state
@@ -65,12 +65,11 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navView, navController);
 
     }
-
+    
     private void openFollowRequestActivity(){
         Intent intent = new Intent(this, FollowRequestActivity.class);
         startActivity(intent);
     }
-
 
     /** Initialize the contents of the Activity's standard options menu.
      * @param menu The options menu in which you place your items.

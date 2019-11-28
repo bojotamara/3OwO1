@@ -18,7 +18,9 @@ import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 
-public class FollowRequestActivity extends AppCompatActivity implements IUserServiceProvider.OnAcceptRequestsListener {
+public class FollowRequestActivity extends AppCompatActivity implements
+        IUserServiceProvider.OnAcceptRequestsListener, RequestListAdapter.OnAcceptClickListener,
+        RequestListAdapter.OnDeclineClickListener {
 
     Toolbar toolbar;
     private ListView requestsListView;
@@ -48,19 +50,35 @@ public class FollowRequestActivity extends AppCompatActivity implements IUserSer
             }
         });
 
-        service = new UserService();
-
         requestsListView = findViewById(R.id.requests_list_view);
         requestDataList = new ArrayList<>();
-        requestsAdapter = new RequestListAdapter(this, requestDataList); // not sure how the listener works
+
+        //requestDataList.add(new FollowRequest("bitch", "whore"));
+        requestsAdapter = new RequestListAdapter(this, requestDataList, this, this); // not sure how the listener works
 
         requestsListView.setAdapter(requestsAdapter);
+
+        service = new UserService();
+        service.getFollowRequests(this);
         
 
     }
 
     @Override
     public void onAcceptRequestsUpdate(ArrayList<FollowRequest> newRequests) {
+        requestDataList.clear();
+        requestDataList.addAll(newRequests);
+        requestsAdapter.notifyDataSetChanged();
+    }
 
+    @Override
+    public void OnAcceptClick(FollowRequest requestFrom) {
+        service.acceptFollowRequest(requestFrom);
+
+    }
+
+    @Override
+    public void OnDeclineClick(FollowRequest request) {
+        service.declineFollowRequest(request);
     }
 }

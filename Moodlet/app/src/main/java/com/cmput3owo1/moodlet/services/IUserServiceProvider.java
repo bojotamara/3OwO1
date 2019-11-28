@@ -80,6 +80,10 @@ public interface IUserServiceProvider {
 
     void sendFollowRequest(User user, OnFollowRequestListener listener);
 
-    void getFollowRequests(User user, OnAcceptRequestsListener listener);
+    void getFollowRequests(OnAcceptRequestsListener listener);
+
+    void declineFollowRequest(FollowRequest request);
+
+    void acceptFollowRequest(FollowRequest request);
 
 }

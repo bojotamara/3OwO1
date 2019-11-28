@@ -26,6 +26,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.content.ContentValues.TAG;
@@ -204,17 +205,44 @@ public class UserService implements IUserServiceProvider{
                 //TODO .addOnFailureListener() - Add this later
     }
 
-//    public void acceptFollowRequest(final User user, final OnFollowRequestListener listener) {
-//        String currentUser = auth.getCurrentUser().getDisplayName();
-//
-//        db.collection("requests")
-//
-//
-//    }
-//
-//    public void declineFollowRequest(final User user, final OnFollowRequestListener listener) {
-//
-//    }
+    @Override
+    public void acceptFollowRequest(FollowRequest request) {
+        final String newFollowerUsername = request.getRequestFrom();
+        final String currentUser = request.getRequestTo();
+        HashMap<String, String> data = new HashMap<>();
+        data.put("username", newFollowerUsername);
+
+        db.collection("users").document(currentUser).collection("followers")
+                .add(data);
+
+        Query moodHistoryQuery = db.collection("moodEvents")
+                .whereEqualTo("username", currentUser)
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(1);
+
+        moodHistoryQuery.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot snapshots) {
+                String path = "users/" + newFollowerUsername + "/following/" + currentUser;
+                if (snapshots.isEmpty()) {
+                    db.document(path).set(new HashMap<String, Object>());
+                } else {
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        MoodEvent mostRecentEvent = doc.toObject(MoodEvent.class);
+                        db.document(path).set(mostRecentEvent);
+                        db.document(path).update("username", currentUser);
+                    }
+                }
+            }
+        });
+
+        declineFollowRequest(request);
+    }
+
+    @Override
+    public void declineFollowRequest(FollowRequest request) {
+        db.collection("requests").document(request.getId()).delete();
+    }
 
     private Task<DocumentSnapshot> setFollowStatusForUser(final User user) {
         String currentUser = auth.getCurrentUser().getDisplayName();
@@ -259,7 +287,7 @@ public class UserService implements IUserServiceProvider{
      * Listen for follower request updates
      */
     @Override
-    public void getFollowRequests(User user, OnAcceptRequestsListener listener) {
+    public void getFollowRequests(OnAcceptRequestsListener listener) {
         String username = auth.getCurrentUser().getDisplayName();
 
         Query requestsQuery = db.collection("requests")
@@ -277,6 +305,7 @@ public class UserService implements IUserServiceProvider{
                     FollowRequest followRequest = doc.toObject(FollowRequest.class);
                     newRequests.add(followRequest);
                 }
+                listener.onAcceptRequestsUpdate(newRequests);
             }
         });
     }

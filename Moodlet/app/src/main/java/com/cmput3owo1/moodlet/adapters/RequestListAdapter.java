@@ -41,6 +41,7 @@ public class RequestListAdapter extends ArrayAdapter<FollowRequest> {
 
         super(context, 0, requestsList);
         this.requestsList = requestsList;
+        this.context = context;
         this.acceptListener = acceptListener;
         this.declineListener = declineListener;
     }
@@ -69,6 +70,10 @@ public class RequestListAdapter extends ArrayAdapter<FollowRequest> {
         }
 
         final FollowRequest requestFrom = getItem(position);
+
+        String usernameDisplayText = "@" + requestFrom.getRequestFrom();
+
+        holder.usernameTextView.setText(usernameDisplayText);
 
         holder.acceptButton.setOnClickListener(new View.OnClickListener() {
             @Override
